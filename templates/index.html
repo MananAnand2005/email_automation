@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html class="bg-[#0d0f1e] text-white">
+<head>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+</head>
+<body class="p-8">
+    <div class="max-w-5xl mx-auto bg-[#1a1c32] p-8 rounded-xl border border-gray-700 shadow-2xl">
+        <h1 class="text-2xl font-bold text-blue-400 mb-6 border-b border-gray-700 pb-4">ION Analytics | Enrichment Workspace</h1>
+        
+        <form id="emailForm" method="POST" enctype="multipart/form-data" class="space-y-6">
+            <!-- 1. File Uploads -->
+            <div class="grid grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-xs uppercase text-gray-400 mb-2">1. Owners CSV</label>
+                    <input type="file" name="owners" id="ownersFile" onchange="loadOwners()" class="w-full bg-gray-800 p-2 rounded text-sm border border-gray-600">
+                </div>
+                <div>
+                    <label class="block text-xs uppercase text-gray-400 mb-2">2. Data Excel</label>
+                    <input type="file" name="data" id="dataFile" onchange="loadData()" class="w-full bg-gray-800 p-2 rounded text-sm border border-gray-600">
+                </div>
+            </div>
+
+            <!-- 2. Mapping -->
+            <div class="grid grid-cols-3 gap-6">
+                <div><label class="text-[10px] text-gray-500">Owner Match ID</label><select name="owner_col" id="owner_col" class="w-full bg-gray-800 p-2 rounded text-sm border border-gray-600"></select></div>
+                <div><label class="text-[10px] text-gray-500">Email Recipient</label><select name="email_col" id="email_col" class="w-full bg-gray-800 p-2 rounded text-sm border border-gray-600"></select></div>
+                <div><label class="text-[10px] text-gray-500">Data Match ID</label><select name="data_col" id="data_col" class="w-full bg-gray-800 p-2 rounded text-sm border border-gray-600"></select></div>
+            </div>
+
+            <!-- 3. Sorting & Advanced Rules -->
+            <div class="grid grid-cols-2 gap-6">
+                <div class="bg-gray-900 p-4 rounded border border-gray-700">
+                    <label class="text-xs text-blue-400 font-bold mb-2 block">Table Sorting</label>
+                    <div class="flex gap-2">
+                        <select name="sort_col" id="sort_col" class="bg-gray-800 p-1 text-xs w-full"></select>
+                        <select name="sort_order" class="bg-gray-800 p-1 text-xs"><option value="asc">ASC</option><option value="desc">DESC</option></select>
+                    </div>
+                </div>
+                <div class="bg-gray-900 p-4 rounded border border-gray-700">
+                    <div class="flex justify-between mb-2">
+                        <label class="text-xs text-red-400 font-bold">Highlight Rules</label>
+                        <button type="button" onclick="addRule()" class="text-[10px] bg-blue-600 px-2 rounded">+</button>
+                    </div>
+                    <div id="rulesList" class="space-y-2"></div>
+                </div>
+            </div>
+
+            <!-- 4. Email Setup -->
+            <div class="grid grid-cols-2 gap-6">
+                <input type="text" name="subject" id="subjectInput" placeholder="Email Subject" required class="bg-gray-800 p-2 rounded text-sm border border-gray-600">
+                <input type="text" name="cc" placeholder="CC Email" class="bg-gray-800 p-2 rounded text-sm border border-gray-600">
+            </div>
+
+            <!-- 5. Editor -->
+            <div>
+                <div id="subPalette" class="flex gap-2 mb-2"></div>
+                <div id="varPalette" class="flex gap-2 mb-2 flex-wrap"></div>
+                <div id="tablePalette" class="flex gap-2 mb-2 flex-wrap border-t border-gray-700 pt-2"></div>
+                <div id="editor" class="bg-white text-black h-64 rounded"></div>
+                <input type="hidden" name="message" id="message">
+            </div>
+
+            <button type="submit" class="w-full bg-[#a8e063] hover:bg-green-400 text-black font-bold py-3 rounded transition">Generate & Download .MSG Drafts</button>
+        </form>
+    </div>
+
+    <script>
+        var quill = new Quill('#editor', { modules: { toolbar: [['bold', 'italic', 'underline']] }, theme: 'snow' });
+
+        function loadOwners() {
+            const file = document.getElementById('ownersFile').files[0];
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const wb = XLSX.read(e.target.result, {type: 'array'});
+                const headers = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header: 1})[0];
+                ['owner_col', 'email_col'].forEach(id => document.getElementById(id).innerHTML = headers.map(h => `<option value="${h}">${h}</option>`).join(''));
+                document.getElementById('varPalette').innerHTML = headers.map(h => `<button type="button" onclick="insert('{${h}}')" class="bg-gray-700 px-2 py-1 rounded text-[10px] text-white hover:bg-gray-500">{${h}}</button>`).join('') + `<button type="button" onclick="insert('{FirstName}')" class="bg-blue-700 px-2 py-1 rounded text-[10px] text-white">{FirstName}</button>`;
+                document.getElementById('subPalette').innerHTML = `<button type="button" onclick="insertSub('{FirstName}')" class="bg-blue-700 px-1 rounded text-[10px] text-white">Sub: {FirstName}</button><button type="button" onclick="insertSub('{FullName}')" class="bg-blue-700 px-1 rounded text-[10px] text-white">Sub: {FullName}</button>`;
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function loadData() {
+            const file = document.getElementById('dataFile').files[0];
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const wb = XLSX.read(e.target.result, {type: 'array'});
+                const headers = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header: 1})[0];
+                window.dataHeaders = headers;
+                document.getElementById('data_col').innerHTML = headers.map(h => `<option value="${h}">${h}</option>`).join('');
+                document.getElementById('sort_col').innerHTML = headers.map(h => `<option value="${h}">${h}</option>`).join('');
+                document.getElementById('tablePalette').innerHTML = wb.SheetNames.map(s => `<button type="button" onclick="insert('{TABLE:${s}}')" class="bg-green-700 px-2 py-1 rounded text-[10px] text-white hover:bg-green-600">Table: ${s}</button>`).join('');
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function addRule() {
+            if(!window.dataHeaders) return alert("Upload Data Excel first!");
+            const div = document.createElement('div');
+            div.className = "flex gap-1";
+            div.innerHTML = `<select name="rule_col[]" class="bg-gray-800 p-1 text-[10px] w-full text-white">${window.dataHeaders.map(h => `<option value="${h}">${h}</option>`).join('')}</select>
+                             <select name="rule_op[]" class="bg-gray-800 p-1 text-[10px] text-white"><option value="eq">Equals</option><option value="neq">Not Equals</option><option value="gt">Greater</option><option value="lt">Less</option><option value="before_today">Before Today</option></select>
+                             <input name="rule_val[]" placeholder="Value" class="bg-gray-800 p-1 text-[10px] w-full text-white">
+                             <button type="button" onclick="this.parentElement.remove()" class="text-red-500 font-bold">×</button>`;
+            document.getElementById('rulesList').appendChild(div);
+        }
+
+        function insert(v) { quill.insertText(quill.getSelection().index, v); }
+        function insertSub(v) { document.getElementById('subjectInput').value += v; }
+        document.getElementById('emailForm').onsubmit = () => document.getElementById('message').value = quill.root.innerHTML;
+    </script>
+</body>
+</html>
