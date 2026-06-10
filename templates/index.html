@@ -173,10 +173,12 @@ function loadData() {
         window.dataHeaders = headers;
 
         document.getElementById('match_col').innerHTML =
-            headers.map(h => `<option>${h}</option>`).join('');
+            `<option value="" disabled selected>Select Match Column</option>` +
+            headers.map(h => `<option value="${h}">${h}</option>`).join('');
 
         document.getElementById('sort_col').innerHTML =
-            headers.map(h => `<option>${h}</option>`).join('');
+        `<option value="" disabled selected>Select Sort Column</option>` +
+            headers.map(h => `<option value="${h}">${h}</option>`).join('');
 
         document.getElementById('varPalette').innerHTML =
             headers.map(h =>
