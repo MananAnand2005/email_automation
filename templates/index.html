@@ -1,243 +1,361 @@
 <!DOCTYPE html>
-<html class="bg-[#0d0f1e] text-white">
+<html class="bg-[#0d0f1e] text-white overflow-hidden">
 <head>
+    <title>ION Analytics | Email Suite Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
     <style>
-        /* ✅ Remove ALL Quill tooltip / popup UI */
-        .ql-tooltip,
-        .ql-hidden {
-            display: none !important;
-        }
-
-        /* ✅ Remove Quill editor floating UI (including "Close") */
-        .ql-snow .ql-tooltip,
-        .ql-container .ql-tooltip,
-        .ql-editor [title] {
-            display: none !important;
-        }
-
-        /* ✅ Kill browser tooltips completely */
-        [title] {
-            pointer-events: none !important;
-        }
-
-        /* ✅ Remove any floating popups */
-        .ql-popup,
-        .ql-clipboard {
-            display: none !important;
-        }
+        /* ION Theme Overrides */
+        .ql-toolbar.ql-snow { background: #f3f4f6; border-radius: 8px 8px 0 0; border: 1px solid #374151; }
+        .ql-container.ql-snow { background: white; color: black; border-radius: 0 0 8px 8px; font-size: 15px; border: 1px solid #374151; min-height: 450px; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0b1a35; }
+        ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
+        
+        .mode-active { background-color: #2563eb !important; color: white !important; box-shadow: 0 0 15px rgba(37, 99, 235, 0.4); }
+        .logic-card { transition: all 0.2s ease-in-out; }
+        .logic-card:hover { border-color: #3b82f6; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade { animation: fadeIn 0.3s ease-out forwards; }
     </style>
+</head>
+<body class="h-screen flex flex-col font-sans selection:bg-blue-500/30">
 
-
-<body class="h-screen flex flex-col">
-
-<!-- ✅ ULTRA PREMIUM HEADER -->
-<div class="h-24 bg-[#0b1a35] border-b border-gray-700 relative flex items-center justify-center overflow-hidden">
-
-    <!-- 🔥 Subtle Gradient Glow -->
-    <div class="absolute bottom-0 w-full h-[2px] bg-gradient-to-r from-blue-400 via-green-400 to-blue-400"></div>
-
-    <!-- LEFT LOGO -->
-    <div class="absolute left-6 flex items-center">
-        <img src="{{ url_for('static', filename='ion_logo.png.png') }}" 
-             class="h-16 opacity-90 hover:opacity-100 transition duration-300">
-    </div>
-
-    <!-- ✅ CENTER CONTENT -->
-    <div class="flex items-center gap-8">
-
-        <!-- SAME SIZE TEXT -->
-        <span class="text-3xl md:text-4xl font-bold tracking-widest uppercase">
-            ION ANALYTICS
-        </span>
-
-        <!-- PREMIUM DIVIDER -->
-        <span class="h-6 w-[2px] bg-gradient-to-b from-transparent via-gray-400 to-transparent opacity-70"></span>
-
-        <span class="text-3xl md:text-4xl font-semibold tracking-wide">
-            Email Automation Tool
-        </span>
-
-    </div>
-
-    <!-- RIGHT LABEL -->
-    <div class="absolute right-6 text-xs text-gray-400 tracking-wide">
-        Internal Tool
-    </div>
-
-</div>
-
-
-<form id="emailForm" method="POST" enctype="multipart/form-data" class="flex-1 flex gap-6 p-6 overflow-hidden">
-
-    <!-- ✅ LEFT PANEL -->
-    <div class="w-[520px] bg-[#15172b] p-4 rounded-xl border border-gray-700 flex flex-col gap-4">
-
-        <h1 class="text-lg font-bold text-blue-400">Workspace</h1>
-
-        <!-- Upload -->
-        <input type="file" name="data" id="dataFile"
-            onchange="loadData()"
-            class="bg-gray-800 p-2 rounded border border-gray-600 text-sm">
-
-        <!-- Mapping -->
-        <div class="grid grid-cols-2 gap-2 text-sm">
-            <select name="match_col" id="match_col" class="bg-gray-800 p-2 rounded border"></select>
-            <select name="sort_col" id="sort_col" class="bg-gray-800 p-2 rounded border"></select>
-        </div>
-
-        <!-- Sorting -->
-        <select name="sort_order" class="bg-gray-800 p-2 rounded text-sm border">
-            <option value="asc">Ascending</option>
-            <option value="desc">Descending</option>
-        </select>
-
-        <!-- Rules -->
-        <div class="bg-[#1e2138] p-3 rounded flex-1 border border-gray-700 flex flex-col">
-            <div class="flex justify-between mb-2">
-                <span class="text-xs text-red-400">Highlight Rules</span>
-                <button type="button" onclick="addRule()" class="text-xs bg-blue-600 px-2 rounded">+</button>
+    <!-- ✅ ULTRA-PREMIUM HEADER -->
+    <header class="h-24 bg-[#0b1a35] border-b border-gray-700 flex items-center justify-between px-8 relative overflow-hidden flex-shrink-0 z-50">
+        <div class="absolute bottom-0 w-full h-[2px] bg-gradient-to-r from-blue-500 via-emerald-400 to-blue-500"></div>
+        
+        <div class="flex items-center gap-8">
+            <div class="flex flex-col">
+                <span class="text-3xl font-black text-blue-400 tracking-tighter leading-none">ION ANALYTICS</span>
+                <span class="text-[10px] text-gray-500 tracking-[0.4em] uppercase font-bold mt-1">Global Communication Engine</span>
             </div>
-
-            <div id="rulesList" class="space-y-2 overflow-auto max-h-[250px]"></div>
-        </div>
-
-        <!-- Submit -->
-        <button type="submit"
-            class="bg-green-400 text-black py-2 rounded font-bold text-sm">
-            Generate
-        </button>
-
-    </div>
-
-    <!-- ✅ RIGHT PANEL -->
-    <div class="flex-1 bg-[#15172b] p-4 rounded-xl border border-gray-700 flex flex-col">
-
-        <!-- ✅ SUBJECT + CC -->
-        <div class="flex gap-3 mb-2">
-            <input name="subject" id="subjectInput" placeholder="Subject"
-                class="flex-1 bg-gray-800 p-2 rounded text-white text-sm border border-gray-600">
-
-            <input name="cc" placeholder="CC"
-                class="w-[220px] bg-gray-800 p-2 rounded text-white text-sm border border-gray-600">
-        </div>
-
-        <!-- ✅ OWNER VARIABLES -->
-        <div class="mb-2">
-            <div class="text-xs text-blue-300 mb-1">Owner Variables</div>
-            <div class="flex flex-wrap gap-2 text-xs">
-                <button onclick="insert('{Name}')" class="bg-blue-700 px-2 py-1 rounded">Name</button>
-                <button onclick="insert('{Email}')" class="bg-blue-700 px-2 py-1 rounded">Email</button>
-                <button onclick="insert('{FirstName}')" class="bg-blue-700 px-2 py-1 rounded">First Name</button>
-                <button onclick="insert('{FullName}')" class="bg-blue-700 px-2 py-1 rounded">Full Name</button>
+            
+            <div class="flex bg-gray-900 p-1.5 rounded-xl border border-gray-700 ml-4">
+                <button type="button" id="btnIndiv" onclick="setMode('sender')" class="mode-active px-8 py-2 rounded-lg text-xs font-black transition-all">SENDER</button>
+                <button type="button" id="btnBroad" onclick="setMode('broadcaster')" class="px-8 py-2 rounded-lg text-xs font-black transition-all text-gray-500 hover:text-white">BROADCASTER</button>
             </div>
         </div>
 
-        <!-- ✅ DATA VARIABLES -->
-        <div class="mb-2">
-            <div class="text-xs text-green-300 mb-1">Data Columns (Excel)</div>
-            <div id="varPalette" class="flex flex-wrap gap-2 text-xs"></div>
+        <div class="flex items-center gap-6">
+            <div class="flex flex-col items-end">
+                <span class="text-[10px] text-gray-500 uppercase font-black mb-1 mr-1">Workspace Config</span>
+                <div class="flex gap-2">
+                    <select id="tplSel" onchange="loadTemplate(this.value)" class="bg-gray-800 border border-gray-600 rounded-lg text-xs px-4 py-2 outline-none focus:border-blue-400 transition-all w-56 text-gray-200">
+                        <option value="">New Workspace...</option>
+                        {% for t in templates %}<option value="{{t}}">{{t}}</option>{% endfor %}
+                    </select>
+                    <button type="button" onclick="saveTemplate()" class="bg-blue-600 hover:bg-blue-500 px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all">Save</button>
+                </div>
+            </div>
         </div>
+    </header>
 
-        <!-- ✅ TABLES -->
-        <div class="mb-2">
-            <div class="text-xs text-yellow-300 mb-1">Tables</div>
-            <div id="tablePalette" class="flex flex-wrap gap-2 text-xs"></div>
-        </div>
+    <form id="mainForm" method="POST" action="/process" enctype="multipart/form-data" class="flex flex-1 overflow-hidden">
+        <input type="hidden" name="tool_mode" id="tool_mode" value="sender">
 
-        <!-- ✅ EDITOR -->
-        <div id="editor" class="bg-white text-black flex-1 rounded p-2"></div>
-        <input type="hidden" name="message" id="message">
+        <!-- ✅ LEFT SIDEBAR: LOGIC & FILTERING -->
+        <aside class="w-[480px] bg-[#15172b] border-r border-gray-800 p-6 flex flex-col gap-6 overflow-y-auto overflow-x-hidden">
+            
+            <div id="broadcastPanel" class="hidden bg-blue-900/10 border border-blue-500/30 p-4 rounded-2xl animate-fade">
+                <label class="text-[10px] text-blue-400 font-black uppercase mb-2 block tracking-widest">Broadcast Mode Options</label>
+                <select name="broadcast_type" class="w-full bg-gray-900 text-sm border border-blue-500/20 p-3 rounded-xl outline-none focus:border-blue-400">
+                    <option value="single">Single Mass Draft (Combined Table)</option>
+                    <option value="multi">Individual Drafts (Common Pool Table)</option>
+                </select>
+                <p class="text-[10px] text-gray-500 mt-2 italic">Broadcast mode aggregates data for all selected names into a shared table pool.</p>
+            </div>
 
-    </div>
+            <section>
+                <label class="text-[10px] text-gray-500 uppercase font-black tracking-[0.2em] mb-3 block">Step 1: Resource Upload</label>
+                <div class="relative group">
+                    <input type="file" name="data" id="dataFile" onchange="handleExcel()" class="block w-full text-xs text-gray-400 file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-gray-800 file:text-white file:cursor-pointer hover:file:bg-gray-700 transition-all border border-dashed border-gray-700 rounded-xl p-2 group-hover:border-blue-500/50">
+                </div>
+            </section>
 
-</form>
+            <div class="grid grid-cols-2 gap-4">
+                <section>
+                    <label class="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Match Identifier</label>
+                    <select name="match_col" id="match_col" onchange="autoScanRecipients()" class="w-full bg-gray-800 border border-gray-700 rounded-xl p-3 text-sm focus:border-blue-500 outline-none transition-all"></select>
+                </section>
+                <section>
+                    <label class="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Sorting Column</label>
+                    <select name="sort_col" id="sort_col" class="w-full bg-gray-800 border border-gray-700 rounded-xl p-3 text-sm focus:border-blue-500 outline-none transition-all"></select>
+                </section>
+            </div>
 
-<script>
-var quill = new Quill('#editor', { theme: 'snow' });
+            <section>
+                <label class="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Default Sorting Order</label>
+                <select name="sort_order" class="w-full bg-gray-800 border border-gray-700 rounded-xl p-3 text-sm outline-none focus:border-blue-500">
+                    <option value="asc">Ascending (Smallest / A-Z First)</option>
+                    <option value="desc">Descending (Largest / Z-A First)</option>
+                </select>
+            </section>
 
-// Load Data
-function loadData() {
-    const file = document.getElementById('dataFile').files[0];
-    const reader = new FileReader();
+            <!-- RECIPIENT TARGETING BLOCK -->
+            <section class="flex-1 flex flex-col min-h-[350px]">
+                <div class="flex justify-between items-end mb-3">
+                    <div class="flex flex-col">
+                        <label class="text-[10px] text-gray-500 uppercase font-black tracking-widest" id="listTitle">Recipients (Data-Driven)</label>
+                        <div class="relative mt-2">
+                            <input type="text" id="recipSearch" onkeyup="filterRecipientList()" placeholder="Quick filter names..." class="bg-gray-800/50 border border-gray-700 rounded-lg text-[10px] py-1.5 px-3 w-44 outline-none focus:border-blue-500">
+                        </div>
+                    </div>
+                    <div class="flex gap-4 text-[10px] font-black text-blue-400 uppercase">
+                        <button type="button" onclick="bulkAction(true)" class="hover:text-white transition-colors underline decoration-dotted">Select All</button>
+                        <button type="button" onclick="bulkAction(false)" class="hover:text-white transition-colors underline decoration-dotted">Clear</button>
+                        <button type="button" onclick="invertSelection()" class="hover:text-white transition-colors underline decoration-dotted text-gray-400">Invert</button>
+                    </div>
+                </div>
+                <div id="recipientList" class="flex-1 bg-gray-900/50 rounded-2xl border border-gray-700 p-3 overflow-y-auto space-y-1 ring-1 ring-inset ring-white/5">
+                    <p class="text-[11px] text-gray-600 text-center py-20 italic">Select an Identifier and upload Excel to load target list.</p>
+                </div>
+            </section>
 
-    reader.onload = (e) => {
-        const wb = XLSX.read(e.target.result, {type: 'array'});
-        const headers = XLSX.utils.sheet_to_json(
-            wb.Sheets[wb.SheetNames[0]], {header: 1}
-        )[0];
+            <!-- HIGHLIGHT RULES -->
+            <section class="h-64 flex flex-col border-t border-gray-800 pt-6">
+                <div class="flex justify-between items-center mb-4">
+                    <label class="text-[10px] text-emerald-400 uppercase font-black tracking-widest">Logic: Styling Rules</label>
+                    <button type="button" onclick="addRule()" class="bg-blue-600 hover:bg-blue-500 text-white w-6 h-6 rounded-lg font-black shadow-lg transform active:scale-90 transition-all">+</button>
+                </div>
+                <div id="rulesList" class="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar"></div>
+            </section>
 
-        window.dataHeaders = headers;
+            <button type="submit" class="bg-emerald-500 hover:bg-emerald-400 py-4 rounded-2xl font-black text-black text-xs uppercase tracking-[0.2em] shadow-[0_10px_40px_rgba(16,185,129,0.2)] transform active:scale-[0.98] transition-all flex-shrink-0">
+                Execute Process & Download
+            </button>
+        </aside>
 
-        document.getElementById('match_col').innerHTML =
-            `<option value="" disabled selected>Select Match Column</option>` +
-            headers.map(h => `<option value="${h}">${h}</option>`).join('');
+        <!-- ✅ RIGHT CANVAS: CONTENT & VARIABLES -->
+        <main class="flex-1 p-8 flex flex-col gap-6 overflow-hidden bg-[#0d0f1e] bg-opacity-50">
+            <div class="flex gap-4">
+                <div class="flex-1 group">
+                    <input name="subject" id="subject" placeholder="Subject line - Placeholders supported (e.g. Action Required: {Name})" class="w-full bg-[#15172b] border border-gray-700 rounded-xl p-4 text-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all shadow-xl">
+                </div>
+                <div class="w-1/4">
+                    <input name="cc" id="cc" placeholder="Global CC (Optional)" class="w-full bg-[#15172b] border border-gray-700 rounded-xl p-4 outline-none focus:border-blue-500 transition-all shadow-xl text-gray-300">
+                </div>
+            </div>
 
-        document.getElementById('sort_col').innerHTML =
-        `<option value="" disabled selected>Select Sort Column</option>` +
-            headers.map(h => `<option value="${h}">${h}</option>`).join('');
+            <div class="flex flex-col gap-2">
+                <div class="flex justify-between items-center px-1">
+                    <span class="text-[10px] text-gray-500 uppercase font-black tracking-widest">Insert Variable / Table Placeholder</span>
+                </div>
+                <div id="palette" class="flex flex-wrap gap-2 min-h-10">
+                    <button type="button" onclick="insertPlaceholder('{Name}')" class="bg-gray-800 text-[10px] px-4 py-2 rounded-lg border border-gray-700 text-blue-300 font-black hover:bg-blue-900/30 transition-all">Full Name</button>
+                    <button type="button" onclick="insertPlaceholder('{FirstName}')" class="bg-gray-800 text-[10px] px-4 py-2 rounded-lg border border-gray-700 text-blue-300 font-black hover:bg-blue-900/30 transition-all">First Name</button>
+                    <button type="button" onclick="insertPlaceholder('{FullName}')" class="bg-gray-800 text-[10px] px-4 py-2 rounded-lg border border-gray-700 text-blue-300 font-black hover:bg-blue-900/30 transition-all">Profile: Full Name</button>
+                    <button type="button" onclick="insertPlaceholder('{Email}')" class="bg-gray-800 text-[10px] px-4 py-2 rounded-lg border border-gray-700 text-blue-300 font-black hover:bg-blue-900/30 transition-all">Email Field</button>
+                </div>
+            </div>
 
-        document.getElementById('varPalette').innerHTML =
-            headers.map(h =>
-                `<button onclick="insert('{${h}}')" class="bg-gray-700 px-2 py-1 rounded">${h}</button>`
-            ).join('');
+            <div class="flex-1 flex flex-col min-h-0 bg-white rounded-2xl overflow-hidden shadow-2xl relative">
+                <div id="editor" class="flex-1"></div>
+            </div>
+            
+            <input type="hidden" name="message" id="message">
+        </main>
+    </form>
 
-        document.getElementById('tablePalette').innerHTML =
-            wb.SheetNames.map(s =>
-                `<button onclick="insert('{TABLE:${s}}')" class="bg-green-700 px-2 py-1 rounded">${s}</button>`
-            ).join('');
-    };
+    <script>
+        // ✅ 1. INITIALIZATION
+        var quill = new Quill('#editor', { 
+            theme: 'snow',
+            modules: { toolbar: [['bold', 'italic', 'underline', 'strike'], ['link', 'blockquote', 'code-block'], [{ 'list': 'ordered'}, { 'list': 'bullet' }], ['clean']] }
+        });
+        const GlobalOwnersDir = JSON.parse('{{ owners | tojson | safe }}');
 
-    reader.readAsArrayBuffer(file);
-}
+        // ✅ 2. MODE HANDLING
+        function setMode(m) {
+            document.getElementById('tool_mode').value = m;
+            document.getElementById('btnIndiv').className = m === 'sender' ? 'mode-active px-8 py-2 rounded-lg text-xs font-black transition-all' : 'px-8 py-2 rounded-lg text-xs font-black transition-all text-gray-500 hover:text-white';
+            document.getElementById('btnBroad').className = m === 'broadcaster' ? 'mode-active px-8 py-2 rounded-lg text-xs font-black transition-all' : 'px-8 py-2 rounded-lg text-xs font-black transition-all text-gray-500 hover:text-white';
+            
+            document.getElementById('broadcastPanel').className = m === 'broadcaster' ? 'bg-blue-900/10 border border-blue-500/30 p-4 rounded-2xl animate-fade mb-2' : 'hidden';
+            document.getElementById('listTitle').innerText = m === 'sender' ? 'Recipients (Found in Data)' : 'Team Directory (Manual Picker)';
+            
+            if(m === 'broadcaster') {
+                renderList(GlobalOwnersDir.map(o => o.Name));
+            } else {
+                autoScanRecipients(); // Pull only what's in excel
+            }
+        }
 
-// Rules
-function addRule() {
-    if (!window.dataHeaders) return alert("Upload Excel first!");
+        // ✅ 3. EXCEL HANDLING
+        async function handleExcel() {
+            const file = document.getElementById('dataFile').files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const wb = XLSX.read(e.target.result, {type: 'array'});
+                const sheet = wb.Sheets[wb.SheetNames[0]];
+                const headers = XLSX.utils.sheet_to_json(sheet, {header:1})[0];
+                window.activeExcelHeaders = headers;
 
-    const div = document.createElement("div");
-    div.className = "flex gap-1 text-xs";
+                // Sync the identifier dropdowns
+                ['match_col', 'sort_col'].forEach(sid => {
+                    const el = document.getElementById(sid);
+                    el.innerHTML = headers.map(h => `<option value="${h}">${h}</option>`).join('');
+                });
 
-    div.innerHTML = `
-        <select name="rule_col[]" class="bg-gray-800 p-1 rounded text-white">
-            ${window.dataHeaders.map(h => `<option value="${h}">${h}</option>`).join('')}
-        </select>
+                // Re-build Variable palette with Table buttons
+                const palette = document.getElementById('palette');
+                const baseVars = `
+                    <button type="button" onclick="insertPlaceholder('{Name}')" class="bg-gray-800 text-[10px] px-4 py-2 rounded-lg border border-gray-700 text-blue-300 font-black hover:bg-blue-900/30 transition-all">Full Name</button>
+                    <button type="button" onclick="insertPlaceholder('{FirstName}')" class="bg-gray-800 text-[10px] px-4 py-2 rounded-lg border border-gray-700 text-blue-300 font-black hover:bg-blue-900/30 transition-all">First Name</button>
+                    <button type="button" onclick="insertPlaceholder('{Email}')" class="bg-gray-800 text-[10px] px-4 py-2 rounded-lg border border-gray-700 text-blue-300 font-black hover:bg-blue-900/30 transition-all">Email Field</button>
+                `;
+                const tableButtons = wb.SheetNames.map(s => `
+                    <button type="button" onclick="insertPlaceholder('{TABLE:${s}}')" class="bg-gray-800 text-[10px] px-4 py-2 rounded-lg border border-emerald-900/50 text-emerald-400 font-black hover:bg-emerald-900/20 transition-all">TABLE: ${s}</button>
+                `).join('');
+                palette.innerHTML = baseVars + tableButtons;
 
-        <select name="rule_op[]" class="bg-gray-800 p-1 rounded text-white">
-            <option value="eq">Equals</option>
-            <option value="neq">Not Equals</option>
-            <option value="gt">Greater</option>
-            <option value="lt">Less</option>
-            <option value="gte">≥</option>
-            <option value="lte">≤</option>
-            <option value="before">Before</option>
-            <option value="after">After</option>
-            <option value="on">On</option>
-        </select>
+                autoScanRecipients();
+            };
+            reader.readAsArrayBuffer(file);
+        }
 
-        <input name="rule_val[]" placeholder="value / today"
-            class="bg-gray-800 p-1 rounded text-white w-full">
+        // ✅ 4. RECIPIENT LOGIC
+        async function autoScanRecipients() {
+            const m = document.getElementById('tool_mode').value;
+            if(m !== 'sender') return;
+            const f = document.getElementById('dataFile').files[0];
+            const col = document.getElementById('match_col').value;
+            if(!f || !col) return;
 
-        <button type="button" onclick="this.parentElement.remove()" class="text-red-400">✕</button>
-    `;
+            const fd = new FormData();
+            fd.append('data', f);
+            fd.append('match_col', col);
 
-    document.getElementById("rulesList").appendChild(div);
-}
+            try {
+                const res = await fetch('/scan_excel', { method: 'POST', body: fd });
+                const names = await res.json();
+                renderList(names);
+            } catch (err) {
+                console.error("Scan Error:", err);
+            }
+        }
 
-// Insert text
-function insert(val) {
-    const pos = quill.getSelection();
-    quill.insertText(pos.index, val);
-}
+        function renderList(names) {
+            const container = document.getElementById('recipientList');
+            if(!names || names.length === 0) {
+                container.innerHTML = `<p class="text-[11px] text-gray-600 text-center py-20">No matching owners detected.</p>`;
+                return;
+            }
+            container.innerHTML = names.sort().map(name => `
+                <label class="recipient-item flex items-center gap-3 p-2.5 hover:bg-gray-800/80 rounded-xl cursor-pointer group transition-all animate-fade">
+                    <input type="checkbox" name="recipients[]" value="${name}" checked class="recipient-checkbox accent-blue-500 h-4 w-4 rounded-md">
+                    <span class="text-xs group-hover:text-blue-300 transition-colors truncate">${name}</span>
+                </label>
+            `).join('');
+        }
 
-// Submit
-document.getElementById('emailForm').onsubmit = () => {
-    document.getElementById('message').value = quill.root.innerHTML;
-};
-</script>
+        function filterRecipientList() {
+            const q = document.getElementById('recipSearch').value.toLowerCase();
+            document.querySelectorAll('.recipient-item').forEach(el => {
+                el.style.display = el.innerText.toLowerCase().includes(q) ? 'flex' : 'none';
+            });
+        }
 
+        function bulkAction(checked) {
+            document.querySelectorAll('.recipient-checkbox').forEach(c => c.checked = checked);
+        }
+        
+        function invertSelection() {
+            document.querySelectorAll('.recipient-checkbox').forEach(c => c.checked = !c.checked);
+        }
+
+        // ✅ 5. LOGIC ENGINE UI
+        function addRule(init = null) {
+            const list = document.getElementById('rulesList');
+            const row = document.createElement('div');
+            row.className = "logic-card bg-gray-800/80 p-3 rounded-xl border border-gray-700 relative group animate-fade";
+            row.innerHTML = `
+                <button type="button" onclick="this.parentElement.remove()" class="absolute -top-2 -right-2 bg-red-600 hover:bg-red-500 text-white w-5 h-5 rounded-full text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">✕</button>
+                <select name="rule_col[]" class="w-full bg-transparent text-[11px] text-blue-400 font-black mb-2 outline-none border-b border-gray-700 focus:border-blue-400">
+                    ${window.activeExcelHeaders ? window.activeExcelHeaders.map(h => `<option value="${h}" ${init && init.col === h ? 'selected' : ''}>${h}</option>`).join('') : '<option disabled selected>-- Waiting for Upload --</option>'}
+                </select>
+                <div class="flex gap-2">
+                    <select name="rule_op[]" class="bg-gray-900 border border-gray-700 text-[10px] p-2 rounded-lg flex-1 outline-none text-gray-300">
+                        <option value="eq" ${init && init.op === 'eq' ? 'selected' : ''}>Equals</option>
+                        <option value="neq" ${init && init.op === 'neq' ? 'selected' : ''}>Not Equal</option>
+                        <option value="gt" ${init && init.op === 'gt' ? 'selected' : ''}>&gt;</option>
+                        <option value="lt" ${init && init.op === 'lt' ? 'selected' : ''}>&lt;</option>
+                        <option value="before" ${init && init.op === 'before' ? 'selected' : ''}>Before Date</option>
+                        <option value="after" ${init && init.op === 'after' ? 'selected' : ''}>After Date</option>
+                    </select>
+                    <input name="rule_val[]" value="${init ? init.val : ''}" placeholder="Value..." class="bg-gray-900 border border-gray-700 text-[10px] p-2 rounded-lg flex-1 outline-none text-white focus:ring-1 focus:ring-blue-500">
+                </div>
+            `;
+            list.appendChild(row);
+        }
+
+        // ✅ 6. EDITOR ACTIONS
+        function insertPlaceholder(val) {
+            const range = quill.getSelection(true);
+            quill.insertText(range.index, val);
+            quill.setSelection(range.index + val.length);
+        }
+
+        // ✅ 7. PERSISTENCE
+        async function saveTemplate() {
+            const tName = prompt("Assign Workspace/Template Name:");
+            if(!tName) return;
+
+            const rules = [];
+            document.querySelectorAll('#rulesList > div').forEach(div => {
+                rules.push({
+                    col: div.querySelector('select[name="rule_col[]"]').value,
+                    op: div.querySelector('select[name="rule_op[]"]').value,
+                    val: div.querySelector('input[name="rule_val[]"]').value
+                });
+            });
+
+            const bundle = {
+                name: tName,
+                subject: document.getElementById('subject').value,
+                cc: document.getElementById('cc').value,
+                message: quill.root.innerHTML,
+                match_col: document.getElementById('match_col').value,
+                mode: document.getElementById('tool_mode').value,
+                rules: rules
+            };
+
+            const response = await fetch('/save_template', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(bundle)
+            });
+            if(response.ok) { alert("ION Workflow Saved Successfully."); location.reload(); }
+        }
+
+        function loadTemplate(tName) {
+            if(!tName) return;
+            fetch(`/load_template/${tName}`).then(r => r.json()).then(data => {
+                document.getElementById('subject').value = data.subject || "";
+                document.getElementById('cc').value = data.cc || "";
+                quill.root.innerHTML = data.message || "";
+                
+                if(data.match_col) document.getElementById('match_col').value = data.match_col;
+                if(data.mode) setMode(data.mode);
+                
+                document.getElementById('rulesList').innerHTML = "";
+                if(data.rules) data.rules.forEach(r => addRule(r));
+            });
+        }
+
+        document.getElementById('mainForm').onsubmit = (e) => {
+            const html = quill.root.innerHTML;
+            if(html === '<p><br></p>') {
+                alert("Message body is empty!");
+                return false;
+            }
+            document.getElementById('message').value = html;
+        };
+    </script>
 </body>
 </html>

@@ -1,0 +1,1 @@
+{"name": "Hey", "subject": "", "cc": "", "message": "<p>{TABLE:Renewals}</p>", "match_col": "Opportunity Owner", "mode": "sender", "rules": [{"col": "Opportunity Name", "op": "eq", "val": ""}]}
